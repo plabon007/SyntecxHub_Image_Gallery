@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Image Gallery</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#f4f4f4;color:#222;transition:.3s;padding:20px}
+body.dark{background:#111;color:#fff}
+.container{max-width:1200px;margin:auto;text-align:center}
+h1{margin-bottom:20px}
+.controls{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:20px}
+button,input{padding:10px 15px;border:none;border-radius:8px}
+button{background:#333;color:#fff;cursor:pointer}
+body.dark button{background:#fff;color:#000}
+input{width:250px}
+.gallery{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+ gap:20px;
+}
+.gallery-item{
+ position:relative;
+ overflow:hidden;
+ border-radius:12px;
+ box-shadow:0 4px 10px rgba(0,0,0,0.1);
+ animation:fadeIn .8s ease;
+}
+.gallery-item img{
+ width:100%;
+ height:250px;
+ object-fit:cover;
+ display:block;
+ transition:.4s;
+}
+.gallery-item:hover img{transform:scale(1.1);opacity:.7}
+.caption{
+ position:absolute;
+ bottom:0;
+ width:100%;
+ background:rgba(0,0,0,.6);
+ color:#fff;
+ padding:10px;
+ transform:translateY(100%);
+ transition:.4s;
+}
+.gallery-item:hover .caption{transform:translateY(0)}
+.favorite,.download{
+ position:absolute;
+ top:10px;
+ background:rgba(255,255,255,.8);
+ padding:5px;
+ border-radius:50%;
+ cursor:pointer;
+}
+.favorite{right:10px}
+.download{left:10px}
+.lightbox{
+ display:none;
+ position:fixed;
+ inset:0;
+ background:rgba(0,0,0,.9);
+ justify-content:center;
+ align-items:center;
+ flex-direction:column;
+}
+.lightbox img{max-width:80%;max-height:80%}
+.close{color:white;font-size:30px;cursor:pointer;margin-bottom:10px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@media(max-width:600px){input{width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Advanced Image Gallery</h1>
+
+<div class="controls">
+  <button onclick="filterImages('all')">All</button>
+  <button onclick="filterImages('nature')">Nature</button>
+  <button onclick="filterImages('animals')">Animals</button>
+  <button onclick="filterImages('city')">City</button>
+  <button onclick="toggleDarkMode()">Dark Mode</button>
+  <input type="text" id="search" placeholder="Search images..." onkeyup="searchImages()">
+  <input type="file" id="upload" accept="image/*" onchange="uploadImage(event)">
+</div>
+
+<div class="gallery" id="gallery">
+</div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <span class="close" onclick="closeLightbox()">✖</span>
+  <img id="lightbox-img">
+</div>
+
+<script>
+const images=[
+ {src:'https://c4.wallpaperflare.com/wallpaper/30/586/460/artwork-fantasy-art-digital-art-forest-wallpaper-preview.jpg',title:'Nature View',category:'nature'},
+ {src:'https://wallpapercave.com/wp/wp6668065.jpg',title:'Dragon',category:'animals'},
+ {src:'https://images.unsplash.com/photo-1485470733090-0aae1788d5af?q=80&w=1217&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',title:'Mountain',category:'nature'},
+ {src:'https://c4.wallpaperflare.com/wallpaper/720/249/311/nature-sky-sun-clouds-wallpaper-preview.jpg',title:'Beach',category:'nature'},
+ {src:'https://images.unsplash.com/photo-1507752533523-5186b0bc4c43?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',title:'Night City',category:'city'},
+ {src:'https://images8.alphacoders.com/138/thumb-1920-1383930.png',title:'Night City',category:'city'},
+ {src:'https://www.wallpaperflare.com/static/701/529/232/fantasy-art-creature-hydra-illustration-wallpaper.jpg',title:'Hydra',category:'animals'}
+];
+
+function displayImages(list){
+ const gallery=document.getElementById('gallery');
+ gallery.innerHTML='';
+ list.forEach(img=>{
+  gallery.innerHTML+=`
+  <div class="gallery-item" data-category="${img.category}">
+    <span class="download" onclick="downloadImage('${img.src}')">⬇</span>
+    <span class="favorite" onclick="saveFavorite('${img.title}')">❤️</span>
+    <img loading="lazy" src="${img.src}" alt="${img.title}" onclick="openLightbox('${img.src}')">
+    <div class="caption">${img.title}</div>
+  </div>`;
+ });
+}
+
+function filterImages(category){
+ if(category==='all') displayImages(images);
+ else displayImages(images.filter(img=>img.category===category));
+}
+
+function searchImages(){
+ const value=document.getElementById('search').value.toLowerCase();
+ displayImages(images.filter(img=>img.title.toLowerCase().includes(value)));
+}
+
+function toggleDarkMode(){
+ document.body.classList.toggle('dark');
+}
+
+function openLightbox(src){
+ document.getElementById('lightbox').style.display='flex';
+ document.getElementById('lightbox-img').src=src;
+}
+
+function closeLightbox(){
+ document.getElementById('lightbox').style.display='none';
+}
+
+function uploadImage(event){
+ const file=event.target.files[0];
+ if(file){
+   const reader=new FileReader();
+   reader.onload=function(e){
+     images.push({src:e.target.result,title:'Uploaded Image',category:'custom'});
+     displayImages(images);
+   }
+   reader.readAsDataURL(file);
+ }
+}
+
+function downloadImage(src){
+ const a=document.createElement('a');
+ a.href=src;
+ a.download='image.jpg';
+ a.click();
+}
+
+function saveFavorite(title){
+ let favs=JSON.parse(localStorage.getItem('favorites'))||[];
+ if(!favs.includes(title)) favs.push(title);
+ localStorage.setItem('favorites',JSON.stringify(favs));
+ alert(title+' added to favorites!');
+}
+
+displayImages(images);
+</script>
+</body>
+</html>
